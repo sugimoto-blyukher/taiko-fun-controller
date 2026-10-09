@@ -1,22 +1,22 @@
 #include "Keyboard.h"
 
-const int sensorLeftPin1 = A0;
-const int sensorLeftPin2 = A1;
-const int sensorRightPin3 = A2;
-const int sensorRightPin4 = A3;
+const int sensorLeftPin1 = A0;  // 左カッ
+const int sensorLeftPin2 = A1;  // 左ドン
+const int sensorRightPin3 = A2; // 右ドン
+const int sensorRightPin4 = A3; // 右カッ
 
-const int debugMode = 0; // 1: on, 0: off
+const int debugMode = 1;
 
-int sensorValue1 = -1;
-int sensorValue2 = -1;
-int sensorValue3 = -1;
-int sensorValue4 = -1;
+int sensorValue1 = 0;
+int sensorValue2 = 0;
+int sensorValue3 = 0;
+int sensorValue4 = 0;
 
-const int thresholdDon = 200;
-const int thresholdKa = 300;
+const int thresholdDon = 100;
+const int thresholdKa = 260;
 
 unsigned long lastHitTime = 0;
-const unsigned long retriggerTime = 1;
+const unsigned long retriggerTime = 45;
 
 void setup() {
   Keyboard.begin();
@@ -30,32 +30,36 @@ void loop() {
   sensorValue4 = analogRead(sensorRightPin4);
 
   if (millis() - lastHitTime >= retriggerTime) {
+    int sensorValues[] = {
+      sensorValue1,
+      sensorValue2,
+      sensorValue3,
+      sensorValue4
+    };
 
-    // 左カッ
-    if (sensorValue1 >= thresholdKa) {
-      Serial.println("左カッ");
-      Keyboard.write('d');
-      lastHitTime = millis();
+    const char keys[] = {'d', 'f', 'j', 'k'};
+    const char* names[] = {
+      "左カッ",
+      "左ドン",
+      "右ドン",
+      "右カッ"
+    };
+
+    int maxIndex = 0;
+    int maxValue = sensorValues[0];
+
+    // 最大値と、そのセンサーのインデックスを取得
+    for (int i = 1; i < 4; i++) {
+      if (sensorValues[i] > maxValue) {
+        maxValue = sensorValues[i];
+        maxIndex = i;
+      }
     }
 
-    // 左ドン
-    else if (sensorValue2 >= thresholdDon) {
-      Serial.println("左ドン");
-      Keyboard.write('f');
-      lastHitTime = millis();
-    }
-
-    // 右カッ
-    else if (sensorValue3 >= thresholdKa) {
-      Serial.println("右カッ");
-      Keyboard.write('k');
-      lastHitTime = millis();
-    }
-
-    // 右ドン
-    else if (sensorValue4 >= thresholdDon) {
-      Serial.println("右ドン");
-      Keyboard.write('j');
+    // 打撃を検出した場合のみキーを送信
+    if (maxValue >= thresholdDon) {
+      Serial.println(names[maxIndex]);
+      Keyboard.write(keys[maxIndex]);
       lastHitTime = millis();
     }
   }
