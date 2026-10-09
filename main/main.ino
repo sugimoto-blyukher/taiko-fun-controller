@@ -1,24 +1,22 @@
 #include "Keyboard.h"
 
-const int sensorPin1 = A0;
-const int sensorPin2 = A1;
-const int sensorPin3 = A2;
-const int sensorPin4 = A3;
+const int sensorLeftPin1 = A0;
+const int sensorLeftPin2 = A1;
+const int sensorRightPin3 = A2;
+const int sensorRightPin4 = A3;
 
-const int debugMode = 0; // off
+const int debugMode = 0; // 1: on, 0: off
 
-int sensorValue1 = 0;
-int sensorValue2 = 0;
-int sensorValue3 = 0;
-int sensorValue4 = 0;
+int sensorValue1 = -1;
+int sensorValue2 = -1;
+int sensorValue3 = -1;
+int sensorValue4 = -1;
 
-int sensorSum = 0; // 4センサーの値の合計値
-
-const int thresholdDon = 200;  // 通常の打撃(ドン)
-const int thresholdKa = 650;  // カッ
+const int thresholdDon = 200;
+const int thresholdKa = 300;
 
 unsigned long lastHitTime = 0;
-const unsigned long retriggerTime = 100;
+const unsigned long retriggerTime = 1;
 
 void setup() {
   Keyboard.begin();
@@ -26,27 +24,50 @@ void setup() {
 }
 
 void loop() {
-  sensorValue1 = analogRead(sensorPin1);
-  sensorValue2 = analogRead(sensorPin2);
-  sensorValue3 = analogRead(sensorPin3);
-  sensorValue4 = analogRead(sensorPin4);
+  sensorValue1 = analogRead(sensorLeftPin1);
+  sensorValue2 = analogRead(sensorLeftPin2);
+  sensorValue3 = analogRead(sensorRightPin3);
+  sensorValue4 = analogRead(sensorRightPin4);
 
-  sensorSum = sensorValue1 + sensorValue2 + sensorValue3 + sensorValue4;
-
-  // 前回の入力から一定時間経過しているか
   if (millis() - lastHitTime >= retriggerTime) {
 
-    if (sensorSum > thresholdDon && sensorSum < thresholdKa) {
-      Serial.println("ドン");
+    // 左カッ
+    if (sensorValue1 >= thresholdKa) {
+      Serial.println("左カッ");
       Keyboard.write('d');
-
-      lastHitTime = millis();
-
-    } else if (sensorSum >= thresholdKa) {
-      Serial.println("カッ");
-      Keyboard.write('k');
-
       lastHitTime = millis();
     }
+
+    // 左ドン
+    else if (sensorValue2 >= thresholdDon) {
+      Serial.println("左ドン");
+      Keyboard.write('f');
+      lastHitTime = millis();
+    }
+
+    // 右カッ
+    else if (sensorValue3 >= thresholdKa) {
+      Serial.println("右カッ");
+      Keyboard.write('k');
+      lastHitTime = millis();
+    }
+
+    // 右ドン
+    else if (sensorValue4 >= thresholdDon) {
+      Serial.println("右ドン");
+      Keyboard.write('j');
+      lastHitTime = millis();
+    }
+  }
+
+  if (debugMode == 1) {
+    Serial.print("A0: ");
+    Serial.print(sensorValue1);
+    Serial.print(" A1: ");
+    Serial.print(sensorValue2);
+    Serial.print(" A2: ");
+    Serial.print(sensorValue3);
+    Serial.print(" A3: ");
+    Serial.println(sensorValue4);
   }
 }
